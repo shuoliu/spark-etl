@@ -7,13 +7,12 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.rdd.RDD
 import org.apache.spark.{SparkConf, SparkContext}
 import org.json.{JSONException, JSONObject}
-import org.slf4j.LoggerFactory
+import org.slf4j.{Logger, LoggerFactory}
 
 import scala.collection.{JavaConversions, mutable}
-import collection.JavaConversions._
 
-object Vars {
-  val logger = LoggerFactory.getLogger(MainQuizUserAnswersCoreEtl.getClass)
+object MainQuizUserAnswersCoreEtlVars {
+  val logger: Logger = LoggerFactory.getLogger(MainQuizUserAnswersCoreEtl.getClass)
   val isValidColumnDefinition = new ColumnDefinition("is_valid_now", null, "boolean", "t", false, 0, "public.main_quiz_user_answers")
   val quizQuestionColumnDefinition = new ColumnDefinition("quiz_question", 255, "character varying", null, false, -2, "ipsy.quiz_user_answers")
   val quizAnswerColumnDefinition = new ColumnDefinition("quiz_answer", 255, "character varying", null, false, -1, "ipsy.quiz_user_answers")
@@ -39,7 +38,7 @@ object MainQuizUserAnswersCoreEtl extends App {
   }
 
   def addIsValidColumn(rows: RDD[(String, Long, GenericRow)]): RDD[GenericRow] = {
-    import Vars._
+    import MainQuizUserAnswersCoreEtlVars._
     val groupedRows = rows.groupBy(_._1).mapValues(userPreferences => {
       val sortedPreferences = userPreferences.toSeq.sortBy(_._2).reverse
       sortedPreferences.head._3.addColumn(new GenericColumn(isValidColumnDefinition, "t"))
@@ -51,7 +50,7 @@ object MainQuizUserAnswersCoreEtl extends App {
   }
 
   def normalizePreferences(rowsWithValidFlag: RDD[GenericRow], jsonPathBroadcast: Broadcast[Map[String, Seq[UserPreferenceJsonPath]]]): RDD[GenericRow] = {
-    import Vars._
+    import MainQuizUserAnswersCoreEtlVars._
     val jsonSchemaMap = jsonPathBroadcast.value
     rowsWithValidFlag.flatMap(row => {
       val jsonSchemaVersion = row.getColumn("json_schema_version").getValue
@@ -121,4 +120,6 @@ object MainQuizUserAnswersCoreEtl extends App {
   val normalizedRows = normalizePreferences(rowsWithValidFlag, jsonPathBroadcast)
   val toInsertRows = normalizedRows.map(_.toJsonString)
   toInsertRows.saveAsTextFile(insertFilename)
+
+  sc.stop()
 }

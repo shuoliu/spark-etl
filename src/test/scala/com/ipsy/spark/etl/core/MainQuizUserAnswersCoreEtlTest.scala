@@ -9,31 +9,31 @@ import org.junit.{Assert, Test}
 
 import scala.collection.JavaConversions
 
-import Vars._
+import MainQuizUserAnswersCoreEtlVars._
 
 
 class MainQuizUserAnswersCoreEtlTest {
-  val sparkConf: SparkConf = new SparkConf()
+  private val sparkConf = new SparkConf()
     .setAppName("MainQuizUserAnswersCoreEtlTest")
     .setMaster("local[1]")
     .set("spark.ui.enabled", "false")
 
-  val sc: SparkContext = SparkContext.getOrCreate(sparkConf)
+  private val sc: SparkContext = SparkContext.getOrCreate(sparkConf)
 
-  val pocUtils = new MainQuizUserAnswersCoreEtlPocUtils
-  val columnList = pocUtils.getSchemaDefinition.getColumnDefinitions
-  val columns = sc.broadcast(JavaConversions.asScalaBuffer(columnList).seq)
-  val jsonPathV1 = Seq(
+  private val pocUtils = new MainQuizUserAnswersCoreEtlPocUtils
+  private val columnList = pocUtils.getSchemaDefinition.getColumnDefinitions
+  private val columns = sc.broadcast(JavaConversions.asScalaBuffer(columnList).seq)
+  private val jsonPathV1 = Seq(
     UserPreferenceJsonPath("q-1", "$['q-1']", true),
     UserPreferenceJsonPath("q-2", "$['q-2']", false),
     UserPreferenceJsonPath("q-3", "$['q-3']", true)
   )
-  val jsonPaths = sc.broadcast(Map("1.0" -> jsonPathV1))
+  private val jsonPaths = sc.broadcast(Map("1.0" -> jsonPathV1))
 
-  val idColumnDef = new ColumnDefinition("id", null, "character varying", null, false, 1, "main_quiz_user_answers")
-  val userIdColumnDef = new ColumnDefinition("user_id", null, "character varying", null, false, 3, "main_quiz_user_answers")
-  val preferencesColumnDef = new ColumnDefinition("preferences", null, "jsonb", null, false, 7, "main_quiz_user_answers")
-  val jsonSchemaVersionColumnDef = new ColumnDefinition("json_schema_version", null, "character varying", null, false, 8, "main_quiz_user_answers")
+  private val idColumnDef = new ColumnDefinition("id", null, "character varying", null, false, 1, "main_quiz_user_answers")
+  private val userIdColumnDef = new ColumnDefinition("user_id", null, "character varying", null, false, 3, "main_quiz_user_answers")
+  private val preferencesColumnDef = new ColumnDefinition("preferences", null, "jsonb", null, false, 7, "main_quiz_user_answers")
+  private val jsonSchemaVersionColumnDef = new ColumnDefinition("json_schema_version", null, "character varying", null, false, 8, "main_quiz_user_answers")
 
   @AfterAll
   def tearDown(): Unit = {
